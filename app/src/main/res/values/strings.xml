@@ -14,6 +14,10 @@
     <string name="title_desc">Who is stronger than me?
     </string>
 
+    <string name="ASC">ASC</string>
+    <string name="DESC">DESC</string>
+    <string name="descr_overflow_button">Help</string>
+
     <string name="squat_hint">
         <font size="14">Max. Squat</font>
     </string>
@@ -50,8 +54,8 @@
         <item>Bremen</item>
         <item>Hamburg</item>
         <item>Hessen</item>
-        <item>Niedersachsen</item>
-        <item>Mecklenburg-Vorpommern</item>
+        <item>Niedersachsen (NI)</item>
+        <item>Mecklenburg-Vorpommern (MV)</item>
         <item>Nordrhein-Westfalen</item>
         <item>Rheinlandpfalz</item>
         <item>Saarland</item>

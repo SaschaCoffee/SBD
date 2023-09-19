@@ -29,8 +29,9 @@
             android:layout_toEndOf="@+id/imageButtonOne_single_item"
             android:ems="10"
             android:focusable="true"
-            android:hint="Repetitions "
-            android:inputType="textPersonName" />
+            android:hint="Repetitions"
+            android:inputType="phone"
+            android:digits="0123456789" />
 
         <EditText
             android:id="@+id/layer_three_et_symbol_reps_single_item_two"
@@ -44,8 +45,9 @@
             android:layout_toEndOf="@+id/imageButtonOne_single_item"
             android:ems="10"
             android:focusable="true"
-            android:hint="Repetitions "
-            android:inputType="textPersonName" />
+            android:hint="Repetitions"
+            android:inputType="phone"
+            android:digits="0123456789" />
 
         <EditText
             android:id="@+id/layer_three_et_symbol_reps_single_item_two_three"
@@ -59,8 +61,9 @@
             android:layout_toEndOf="@+id/imageButtonOne_single_item"
             android:ems="10"
             android:focusable="true"
-            android:hint="Repetitions "
-            android:inputType="textPersonName" />
+            android:hint="Repetitions"
+            android:inputType="phone"
+            android:digits="0123456789" />
 
         <EditText
             android:id="@+id/layer_three_et_kg_card_single_item"
@@ -72,7 +75,8 @@
             android:layout_toStartOf="@+id/layer_four_heavy_button_single_item"
             android:ems="10"
             android:hint="Kg/lb"
-            android:inputType="textPersonName" />
+            android:inputType="phone"
+            android:digits=".0123456789"/>
 
         <EditText
             android:id="@+id/layer_three_et_kg_card_single_item_two"
@@ -84,7 +88,8 @@
             android:layout_toStartOf="@+id/layer_three_heavy_button_single_item_two"
             android:ems="10"
             android:hint="kg/lb"
-            android:inputType="textPersonName" />
+            android:inputType="phone"
+            android:digits=".0123456789"/>
 
         <EditText
             android:id="@+id/layer_three_et_kg_card_single_item_three"
@@ -96,7 +101,8 @@
             android:layout_toStartOf="@+id/layer_three_heavy_button_single_item_two"
             android:ems="10"
             android:hint="kg/lb"
-            android:inputType="textPersonName" />
+            android:inputType="phone"
+            android:digits=".0123456789"/>
 
         <TextView
             android:id="@+id/layer_four_heavy_button_single_item"

@@ -10,9 +10,14 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.GridView;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.MultiAutoCompleteTextView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -29,11 +34,14 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.benchsquatdl2.AdapterHolder.RepKgAdapter;
 import com.example.benchsquatdl2.AdapterHolder.cardViewAdapter;
+import com.example.benchsquatdl2.Events;
+import com.example.benchsquatdl2.MyGridAdapter;
 import com.example.benchsquatdl2.R;
 import com.example.benchsquatdl2.dialogExtend;
 import com.example.benchsquatdl2.model.RepKgModel;
 import com.example.benchsquatdl2.model.commentModel;
 import com.example.benchsquatdl2.model.greenCardModel;
+import com.example.benchsquatdl2.model.modelApi.trainingdto;
 import com.example.benchsquatdl2.model.modelApi.trainingsdaten;
 import com.example.benchsquatdl2.model.modelSquat;
 import com.example.benchsquatdl2.retrofit.RetrofitService;
@@ -52,6 +60,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -59,6 +70,20 @@ import retrofit2.Response;
 
 public class squatFragment extends Fragment implements
         cardViewAdapter.PlayPauseClick  {
+
+    ImageButton NextButton,PreviousButton;
+    TextView CurrentDate;
+
+    ImageView iv;
+    MyGridAdapter myGridAdapter;
+    GridView gridView;
+    private static final int MAX_CALENDAR_DAYS = 42;
+    Calendar calendar = Calendar.getInstance(Locale.ENGLISH);
+    Context context;
+    SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM yyyy", Locale.ENGLISH);
+    SimpleDateFormat monthFormat = new SimpleDateFormat("MMMM", Locale.ENGLISH);
+    SimpleDateFormat yearFormate = new SimpleDateFormat("yyyy", Locale.ENGLISH);
+
 
     ArrayList<greenCardModel> lstBook = new ArrayList<>();
     private FirebaseUser user;
@@ -69,11 +94,15 @@ public class squatFragment extends Fragment implements
     private TextView tv;
     private EditText et_first_set, et_second_set, et_third_set, et_kg, et_kg2, et_kg3;
     int progr = 0;
+
+    List<Date> dates = new ArrayList<>();
+    List<Events> eventsList = new ArrayList<>();
     private Button btn_add_data,btn_delete_yes,btn_delete_item, btn_upload_data, buttonOpenDialog, btn_delete_data;
     private AlertDialog dialog;
     private int counter = 0;
     private double tempCounter;
 
+    private android.app.AlertDialog dialogCalendar;
     int count = 0;
     RepKgModel RepKgModel;
     int arraySizeContactAdapter;
@@ -85,6 +114,10 @@ public class squatFragment extends Fragment implements
     int counterNew = 0;
     int progrrr = 0;
 
+    private LinearLayout linearLayout;
+
+    RetrofitService retrofitService = new RetrofitService();
+    UserApi userApi = retrofitService.getRetrofit().create(UserApi.class);
 
 
     @Override
@@ -93,34 +126,106 @@ public class squatFragment extends Fragment implements
 
         // Inflate the layout for this fragment
         View vx = inflater.inflate(R.layout.activitycard_squat, container, false);
-        pgBar = vx.findViewById(R.id.progressBar3);
-        tv = vx.findViewById(R.id.text_view_progress_squat);
+        NextButton = vx.findViewById(R.id.nextBtn);
+        PreviousButton = vx.findViewById(R.id.previousBtn2);
+        CurrentDate = vx.findViewById(R.id.current_date);
+        gridView = vx.findViewById(R.id.gridview);
 
 
-        referenceTraininglogPublic = FirebaseDatabase.getInstance().getReference("TraininglogPublic");
-
-        mRecyclerView = vx.findViewById(R.id.recyclerview_squat);
-        String childcard = "anzahlSquat";
-        String childcardBench = "Best3SquatKg";
-        String childcardDate = "Date";
-        user = FirebaseAuth.getInstance().getCurrentUser();
-        reference = FirebaseDatabase.getInstance().getReference("metaDateUser");
+        iv = vx.findViewById(R.id.iv_squat);
+        linearLayout = vx.findViewById(R.id.calendarLinearLayout);
 
 
-
-        user = FirebaseAuth.getInstance().getCurrentUser();
-
-        reference = FirebaseDatabase.getInstance().getReference("metaDateUser");
-        referenceTraininglogPrivate = FirebaseDatabase.getInstance().getReference("TraininglogPrivateSquat");
-        referenceTraininglogPublic = FirebaseDatabase.getInstance().getReference("TraininglogPublic");
-        // userid = user.getUid();
-
-        createCard();
-        buildRecyclerView();
+        SetUpCalendar();
 
         buttonOpenDialog = vx.findViewById(R.id.btn_add_data_card_squat);
 
         btn_delete_item = vx.findViewById(R.id.btn_delete_item_squat);
+
+        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long l) {
+                builder = new AlertDialog.Builder(getActivity());
+                View vieww = getLayoutInflater().inflate(R.layout.open_training_data, null);
+                builder.setView(vieww);
+                dialog = builder.create();
+                dialog.show();
+                dialog.create();
+
+                Date monthDate = dates.get(position);
+                Calendar dateCalendar = Calendar.getInstance();
+                dateCalendar.setTime(monthDate);
+                Date xy = dateCalendar.getTime();
+                String format = new SimpleDateFormat("dd-MM-yyy").format(xy);
+                String neuFormat = format;
+
+
+
+                String bench = "bench";
+
+
+                trainingsdaten trainingsdaten = new trainingsdaten("bench",
+                        neuFormat,"2",null,null,null,null,
+                        neuFormat,null,null,null,null);
+
+                TextView rep1 = vieww.findViewById(R.id.tv_reps_opendialog);
+                TextView rep2 = vieww.findViewById(R.id.tv_reps_opendialog2);
+                TextView rep3 = vieww.findViewById(R.id.tv_reps_opendialog3);
+                TextView rep4 = vieww.findViewById(R.id.tv_reps_opendialog4);
+                TextView rep5 = vieww.findViewById(R.id.tv_reps_opendialog5);
+
+// KG STARTS HERE, BUT I NAMED IT TO REPS FOR THE LOOP IN THE NEXT PARAGRAPH
+                TextView kg1 = vieww.findViewById(R.id.tv_kg_opendialog);
+                TextView kg2 = vieww.findViewById(R.id.tv_kg_opendialog2);
+                TextView kg3 = vieww.findViewById(R.id.tv_kg_opendialog3);
+                TextView kg4 = vieww.findViewById(R.id.tv_kg_opendialog4);
+                TextView kg5 = vieww.findViewById(R.id.tv_kg_opendialog5);
+
+                TextView date = vieww.findViewById(R.id.tv_date);
+
+
+                userApi.testemich(trainingsdaten).enqueue(new Callback<com.example.benchsquatdl2.model.modelApi.trainingsdaten>() {
+                    @Override
+                    public void onResponse(Call<com.example.benchsquatdl2.model.modelApi.trainingsdaten> call, Response<com.example.benchsquatdl2.model.modelApi.trainingsdaten> response) {
+
+                        try {
+
+                            date.setText(response.body().getDate());
+                            rep1.setText(response.body().getRep1());
+                            rep2.setText(response.body().getRep2());
+                            rep3.setText(response.body().getRep3());
+                            rep4.setText(response.body().getRep4());
+                            rep5.setText(response.body().getRep5());
+
+                            kg1.setText(response.body().getKg1());
+                            kg2.setText(response.body().getKg2());
+                            kg3.setText(response.body().getKg3());
+                            kg4.setText(response.body().getKg4());
+                            kg5.setText(response.body().getKg5());
+
+                            Log.d("gettheid","" + response.body().getId());
+
+
+
+
+                        }catch (Exception e){
+
+                        }
+
+                    }
+
+                    @Override
+                    public void onFailure(Call<com.example.benchsquatdl2.model.modelApi.trainingsdaten> call, Throwable t) {
+
+                    }
+                });
+
+
+
+
+            }
+        });
+
 
         btn_delete_item.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -140,7 +245,6 @@ public class squatFragment extends Fragment implements
 
                         deleteLastItem();
                         dialog.cancel();
-                        buildRecyclerView();
 
                     }
                 });
@@ -150,27 +254,6 @@ public class squatFragment extends Fragment implements
             }
         });
 
-
-
-        reference.child(user.getUid()).child(childcard).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-
-                try {
-                    long model = snapshot.getValue(long.class);
-                    progr = Integer.parseInt(String.valueOf(model));
-
-                    updateCard(progr);
-                    updateProgressBar(progr);
-                    buildRecyclerView();
-                } catch (Exception e) {
-
-                }
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
-        });
 
         buttonOpenDialog.setOnClickListener(new View.OnClickListener() {
 
@@ -816,7 +899,7 @@ public class squatFragment extends Fragment implements
 
                         }
 
-                        return true;
+                        return false;
                     }
                 };
 
@@ -848,12 +931,14 @@ public class squatFragment extends Fragment implements
                 save.add(0,mAdapter);
                 contactView.setAdapter(save.get(0));
                 mAdapter.setPlayPauseClickListener(squatFragment.this::imageButtonOnClick2);
-                String keyTraining = referenceTraininglogPublic.push().getKey();
-
-
 
                 RetrofitService retrofitService = new RetrofitService();
                 UserApi userApi = retrofitService.getRetrofit().create(UserApi.class);
+
+                Calendar dateCalendar = Calendar.getInstance();
+                Date xy = dateCalendar.getTime();
+                String format = new SimpleDateFormat("dd-MM-yyy").format(xy);
+
 
                 btn_upload_data.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -875,12 +960,14 @@ public class squatFragment extends Fragment implements
 
 
                                     trainingsdaten trainingsdaten = new trainingsdaten("squat",
-                                            "01.02.1999",first_rep_string,null,null,null,null,
+                                            format,first_rep_string,null,null,null,null,
                                             first_kg_string,null,null,null,null);
 
                                     userApi.savedata(trainingsdaten).enqueue(new Callback<com.example.benchsquatdl2.model.modelApi.trainingsdaten>() {
                                         @Override
                                         public void onResponse(Call<com.example.benchsquatdl2.model.modelApi.trainingsdaten> call, Response<com.example.benchsquatdl2.model.modelApi.trainingsdaten> response) {
+
+                                            refreshCalendar();
 
                                         }
 
@@ -895,9 +982,9 @@ public class squatFragment extends Fragment implements
 
                                     progr++;
 
-                                    updateProgressBar(progr);
-                                    updateCard(progr);
-                                    buildRecyclerView();
+
+
+
 
                                     dialog.cancel();
                                     //RESET
@@ -931,13 +1018,13 @@ public class squatFragment extends Fragment implements
                                         !second_rep_l2.isEmpty()) {
 
                                     trainingsdaten trainingsdaten = new trainingsdaten("squat",
-                                            "01.02.1999",first_rep_l2,second_rep_l2,null,null,null,
+                                            format,first_rep_l2,second_rep_l2,null,null,null,
                                             first_kg_l2,second_kg_l2,null,null,null);
 
                                     userApi.savedata(trainingsdaten).enqueue(new Callback<com.example.benchsquatdl2.model.modelApi.trainingsdaten>() {
                                         @Override
                                         public void onResponse(Call<com.example.benchsquatdl2.model.modelApi.trainingsdaten> call, Response<com.example.benchsquatdl2.model.modelApi.trainingsdaten> response) {
-
+                                            refreshCalendar();
                                         }
 
                                         @Override
@@ -949,13 +1036,9 @@ public class squatFragment extends Fragment implements
 
                                     progr++;
 
-                                    reference.child(user.getUid()).child(childcard).setValue(progr);
-
-
-
                                     updateProgressBar(progr);
-                                    updateCard(progr);
-                                    buildRecyclerView();
+
+
 
                                     dialog.cancel();
                                     //RESET
@@ -995,13 +1078,13 @@ public class squatFragment extends Fragment implements
                                         !third_rep_l3.isEmpty() && !first_kg_l3.isEmpty() && !second_kg_l3.isEmpty() && !third_kg_l3.isEmpty()){
 
                                     trainingsdaten trainingsdaten = new trainingsdaten("squat",
-                                            "01.02.1999",first_rep_l3,second_rep_l3,third_rep_l3,null,null,
+                                            format,first_rep_l3,second_rep_l3,third_rep_l3,null,null,
                                             first_kg_l3,second_kg_l3,third_kg_l3,null,null);
 
                                     userApi.savedata(trainingsdaten).enqueue(new Callback<com.example.benchsquatdl2.model.modelApi.trainingsdaten>() {
                                         @Override
                                         public void onResponse(Call<com.example.benchsquatdl2.model.modelApi.trainingsdaten> call, Response<com.example.benchsquatdl2.model.modelApi.trainingsdaten> response) {
-
+                                            refreshCalendar();
                                         }
 
                                         @Override
@@ -1014,13 +1097,9 @@ public class squatFragment extends Fragment implements
 
                                     progr++;
 
-                                    reference.child(user.getUid()).child(childcard).setValue(progr);
-
-
-
                                     updateProgressBar(progr);
-                                    updateCard(progr);
-                                    buildRecyclerView();
+
+
                                     counterNew = 0;
 
                                     dialog.cancel();
@@ -1064,13 +1143,13 @@ public class squatFragment extends Fragment implements
                                         && !kg1_l4.isEmpty() && !kg2_l4.isEmpty() && !kg3_l4.isEmpty() && !kg4_l4.isEmpty()) {
 
                                     trainingsdaten trainingsdaten = new trainingsdaten("squat",
-                                            "01.02.1999",rp1_l4,rp2_l4,rp3_l4,rp4_l4,null,
+                                            format,rp1_l4,rp2_l4,rp3_l4,rp4_l4,null,
                                             kg1_l4,kg2_l4,kg3_l4,kg4_l4,null);
 
                                     userApi.savedata(trainingsdaten).enqueue(new Callback<com.example.benchsquatdl2.model.modelApi.trainingsdaten>() {
                                         @Override
                                         public void onResponse(Call<com.example.benchsquatdl2.model.modelApi.trainingsdaten> call, Response<com.example.benchsquatdl2.model.modelApi.trainingsdaten> response) {
-
+                                            refreshCalendar();
                                         }
 
                                         @Override
@@ -1084,11 +1163,9 @@ public class squatFragment extends Fragment implements
 
 
                                     progr++;
-                                    reference.child(user.getUid()).child(childcard).setValue(progr);
-
                                     updateProgressBar(progr);
-                                    updateCard(progr);
-                                    buildRecyclerView();
+
+
 
                                     counter = 0;
 
@@ -1140,15 +1217,27 @@ public class squatFragment extends Fragment implements
                                         !kg4_l5.isEmpty() && !kg5_l5.isEmpty()){
 
                                     trainingsdaten trainingsdaten = new trainingsdaten("squat",
-                                            "01.02.1999",rp1_l5,rp2_l5,rp3_l5,rp4_l5,rp5_l5,
+                                            format,rp1_l5,rp2_l5,rp3_l5,rp4_l5,rp5_l5,
                                             kg1_l5,kg2_l5,kg3_l5,kg4_l5,kg5_l5);
+
+                                    userApi.savedata(trainingsdaten).enqueue(new Callback<com.example.benchsquatdl2.model.modelApi.trainingsdaten>() {
+                                        @Override
+                                        public void onResponse(Call<com.example.benchsquatdl2.model.modelApi.trainingsdaten> call, Response<com.example.benchsquatdl2.model.modelApi.trainingsdaten> response) {
+                                            refreshCalendar();
+                                        }
+
+                                        @Override
+                                        public void onFailure(Call<com.example.benchsquatdl2.model.modelApi.trainingsdaten> call, Throwable t) {
+
+                                        }
+                                    });
 
 
                                     progr++;
 
                                     updateProgressBar(progr);
-                                    updateCard(progr);
-                                    buildRecyclerView();
+
+
 
                                     counter = 0;
 
@@ -1347,27 +1436,24 @@ public class squatFragment extends Fragment implements
     }
 
 
-    private void buildRecyclerView() {
-        mRecyclerView.setHasFixedSize(true);
-        cardViewAdapter mAdapter = new cardViewAdapter(getActivity(), lstBook);
-        mRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 10));
-        mRecyclerView.setAdapter(mAdapter);
-        mAdapter.setPlayPauseClickListener(this::imageButtonOnClick);
-    }
-
-    private void updateCard(int z) {
-        int countstart = z;
-        int x = 0;
-
-        for (x = 0; x < 39; x++) {
-            lstBook.set(x, new greenCardModel(R.drawable.quadrat40));
-        }
-
-        for (x = 0; x < z; x++) {
-            lstBook.set(x, new greenCardModel(R.drawable.quadratgruen));
-        }
 
 
+
+
+    private void refreshCalendar(){
+        userApi.getDatabyID().enqueue(new Callback<List<trainingdto>>() {
+            @Override
+            public void onResponse(Call<List<trainingdto>> call, Response<List<trainingdto>> response) {
+                myGridAdapter = new MyGridAdapter(getActivity(),dates,calendar,eventsList,response.body());
+                gridView.setAdapter(myGridAdapter);
+                gridView.invalidateViews();
+
+            }
+            @Override
+            public void onFailure(Call<List<trainingdto>> call, Throwable t) {
+
+            }
+        });
     }
 
     public void imageButtonOnClick(View v, int position) {
@@ -1406,432 +1492,19 @@ public class squatFragment extends Fragment implements
                 String getComment = cc.getText().toString().trim();
                 commentModel xx = new commentModel(getComment);
 
-                referenceTraininglogPrivate.child(user.getUid()).child(xy).child("xNote").setValue(getComment);
+
                 dialog.dismiss();
 
             }
         });
-
-
-
-
-        Query bre = referenceTraininglogPrivate.child(user.getUid()).child(xy);
-
-
-        bre.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Log.d("count4","" + snapshot.getChildrenCount());
-                String count = String.valueOf(snapshot.getChildrenCount());
-
-                switch(count){
-                    case "4":
-                        for(DataSnapshot pee : snapshot.getChildren()) {
-                            progrrr++;
-                            String counterString = "rep" + String.valueOf(progrrr);
-                            Log.d("counterSA","" + counterString);
-                            String x = pee.getValue(String.class);
-
-                            Log.d("counterSS","" + x);
-
-                            switch(counterString){
-                                case "rep1":
-                                    Log.d("counterS","peeeee");
-                                    rep1.setText(x);
-                                    break;
-
-                                case "rep2":
-                                    rep6.setText(x);
-                                    break;
-                                case "rep3":
-                                    date.setText(x);
-                                    break;
-                                case "rep4":
-                                    cc.setText(x);
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                            }
-                        }
-                        break;
-
-                    case "6":
-                        for(DataSnapshot pee : snapshot.getChildren()) {
-                            progrrr++;
-                            String counterString = "rep" + String.valueOf(progrrr);
-                            Log.d("counterS","" + counterString);
-                            String x = pee.getValue(String.class);
-
-                            Log.d("counterSS","" + x);
-
-                            switch(counterString){
-                                case "rep1":
-                                    Log.d("counterS","peeeee");
-                                    rep1.setText(x);
-                                    break;
-
-                                case "rep2":
-                                    //KG
-                                    rep2.setText(x);
-                                    break;
-
-                                case "rep3":
-                                    //REP
-                                    rep6.setText(x);
-                                    break;
-
-                                case "rep4":
-                                    //KG
-                                    rep7.setText(x);
-                                    break;
-                                case "rep5":
-                                    date.setText(x);
-                                    break;
-                                case "rep6":
-                                    cc.setText(x);
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    break;
-
-                            }
-                        }break;
-                    case "8":
-                        for(DataSnapshot pee : snapshot.getChildren()) {
-                            progrrr++;
-                            String counterString = "rep" + String.valueOf(progrrr);
-                            Log.d("counterS","" + counterString);
-                            String x = pee.getValue(String.class);
-
-                            Log.d("counterSS","" + x);
-
-                            switch(counterString){
-                                case "rep1":
-                                    Log.d("counterS","peeeee");
-                                    rep1.setText(x);
-                                    break;
-
-                                case "rep2":
-                                    //KG
-                                    rep2.setText(x);
-                                    break;
-
-                                case "rep3":
-                                    //REP
-                                    rep3.setText(x);
-                                    break;
-
-                                case "rep4":
-                                    //KG
-                                    rep6.setText(x);
-                                    break;
-
-                                case "rep5":
-                                    rep7.setText(x);
-                                    break;
-
-                                case "rep6":
-                                    rep8.setText(x);
-                                    break;
-
-                                case "rep7":
-                                    date.setText(x);
-                                    break;
-                                case "rep8":
-                                    cc.setText(x);
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    break;
-
-                            }
-                        }break;
-
-                    case "10":
-                        for(DataSnapshot pee : snapshot.getChildren()) {
-                            progrrr++;
-                            String counterString = "rep" + String.valueOf(progrrr);
-                            Log.d("counterS","" + counterString);
-                            String x = pee.getValue(String.class);
-
-                            Log.d("counterSS","" + x);
-
-                            switch(counterString){
-                                case "rep1":
-                                    Log.d("counterS","peeeee");
-                                    rep1.setText(x);
-                                    break;
-
-                                case "rep2":
-                                    //KG
-                                    rep2.setText(x);
-                                    break;
-
-                                case "rep3":
-                                    //REP
-                                    rep3.setText(x);
-                                    break;
-
-                                case "rep4":
-                                    //KG
-                                    rep4.setText(x);
-                                    break;
-
-                                case "rep5":
-                                    rep6.setText(x);
-                                    break;
-
-                                case "rep6":
-                                    rep7.setText(x);
-                                    break;
-
-                                case "rep7":
-                                    rep8.setText(x);
-                                    break;
-
-                                case "rep8":
-                                    rep9.setText(x);
-                                    break;
-
-                                case "rep9":
-                                    date.setText(x);
-                                    break;
-
-                                case "rep10":
-                                    cc.setText(x);
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    break;
-
-                            }
-                        }break;
-
-                    case "12" :
-                        for(DataSnapshot pee : snapshot.getChildren()) {
-                            progrrr++;
-                            String counterString = "rep" + String.valueOf(progrrr);
-                            Log.d("counterS","" + counterString);
-                            String x = pee.getValue(String.class);
-
-                            Log.d("counterSS","" + x);
-
-                            switch(counterString){
-                                case "rep1":
-                                    Log.d("counterS","peeeee");
-                                    rep1.setText(x);
-                                    break;
-
-                                case "rep2":
-                                    //KG
-                                    rep2.setText(x);
-                                    break;
-
-                                case "rep3":
-                                    //REP
-                                    rep3.setText(x);
-                                    break;
-
-                                case "rep4":
-                                    //KG
-                                    rep4.setText(x);
-                                    break;
-
-                                case "rep5":
-                                    rep5.setText(x);
-                                    break;
-
-                                case "rep6":
-                                    rep6.setText(x);
-                                    break;
-
-                                case "rep7":
-                                    rep7.setText(x);
-                                    break;
-
-                                case "rep8":
-                                    rep8.setText(x);
-                                    break;
-
-                                case "rep9":
-                                    rep9.setText(x);
-                                    break;
-                                case "rep10":
-                                    rep10.setText(x);
-                                    break;
-
-                                case "rep11":
-                                    date.setText(x);
-                                    break;
-                                case "rep12":
-                                    cc.setText(x);
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    progrrr--;
-                                    break;
-
-                            }
-                        }break;
-
-
-
-
-                }
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-
-
-        referenceTraininglogPrivate.child(user.getUid()).child("4").limitToFirst(1).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for(DataSnapshot pee : snapshot.getChildren()) {
-                    String x = pee.getValue(String.class);
-
-
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-
-
-
-
-
-
-
-
-        referenceTraininglogPrivate.addChildEventListener(new ChildEventListener() {
-            @Override
-            public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
-
-            }
-
-            @Override
-            public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
-                for(DataSnapshot dataSnapshot : snapshot.getChildren()){
-                    Log.d("snak","" + snapshot.getChildren());
-
-                }
-            }
-
-            @Override
-            public void onChildRemoved(@NonNull DataSnapshot snapshot) {
-
-            }
-
-            @Override
-            public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-
-
-
-
-        referenceTraininglogPrivate.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for(DataSnapshot dataSnapshot : snapshot.getChildren()){
-                    Log.d("snaps","AAA" + snapshot.getValue());
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-
     }
 
     public void deleteLastItem(){
-        reference = FirebaseDatabase.getInstance().getReference("metaDateUser");
-        referenceTraininglogPrivate = FirebaseDatabase.getInstance().getReference("TraininglogPrivateSquat");
 
-
-        DatabaseReference quotesRef = referenceTraininglogPrivate.child(user.getUid());
 
         if (progr > 0){
             progr--;
         }
-
-
-        quotesRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                String test = String.valueOf(snapshot.getChildrenCount());
-
-                String x = String.valueOf(snapshot.getChildrenCount());
-                int newC = Integer.parseInt(x);
-
-                DatabaseReference quotesRef = referenceTraininglogPrivate.child(user.getUid()).child(x);
-                quotesRef.removeValue();
-
-                if(newC > 0) {
-                    newC--;
-                    reference.child(user.getUid()).child("anzahlSquat").setValue(newC);
-                    updateCard(Integer.parseInt(test));
-                    updateCard(newC);
-                    buildRecyclerView();
-                }
-                else{
-                    newC = 0;
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-
-
-
-
-
-
-
-
     }
 
     public void imageButtonOnClick2(View v, int position, String x) {
@@ -1852,69 +1525,55 @@ public class squatFragment extends Fragment implements
 
     }
 
+    private void SetUpCalendar() {
+        String currentDate = dateFormat.format(calendar.getTime());
+        CurrentDate.setText(currentDate);
+        dates.clear();
+        //Calendar Day of Month ist richtig (aktuelles Datum), Danach wird es auf 1 gesetzt
+        Calendar monthCalendar = (Calendar) calendar.clone();
+        monthCalendar.set(Calendar.DAY_OF_MONTH, 1);
+        int FirstDayofMonth = monthCalendar.get(Calendar.DAY_OF_WEEK) - 2;
 
-    private void createCard() {
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
+        //mit -2 kann ich die Tageszahlen verschieben.OUTPUT =5
+        //Day of Week = An welcher stelle steht der tag,
+        //DAY_OF_WEEK is the day of the week (7 days), DAY_OF_MONTH is the day of the month (<=31 days)
 
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
+        //wichtig für das pinke feld
+        //start 01.07, -FirstDayofMonth, wir gehen paar tage zurück
+        //In der while schlafen fange wir paar tage früher an zu zählen, als der Monat anfängt
+        //Bsp. 26,27,28,29,30, dann 01 bis max 42
 
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
+        monthCalendar.add(Calendar.DAY_OF_MONTH, -FirstDayofMonth);
 
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
+        while (dates.size() < MAX_CALENDAR_DAYS){
+            dates.add(monthCalendar.getTime());
+            monthCalendar.add(Calendar.DAY_OF_MONTH,1);
+        }
 
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
+        userApi.getDatabyID().enqueue(new Callback<List<trainingdto>>() {
+            @Override
+            public void onResponse(Call<List<trainingdto>> call, Response<List<trainingdto>> response) {
+                myGridAdapter = new MyGridAdapter(getActivity(),dates,calendar,eventsList,response.body());
+                gridView.setAdapter(myGridAdapter);
+            }
+            @Override
+            public void onFailure(Call<List<trainingdto>> call, Throwable t) {
 
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
+            }
+        });
 
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-
-
-
-
-        int arraySize = lstBook.size();
 
 
     }
 
+
+
+
     private void updateProgressBar(int z) {
         int x = z;
         String zy = String.valueOf(z) + "%";
-        pgBar.setProgress(x);
-        tv.setText(zy);
+
+       // tv.setText(zy);
     }
 
 

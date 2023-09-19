@@ -57,27 +57,24 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.MultiAutoCompleteTextView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 
 import com.example.benchsquatdl2.AdapterHolder.RepKgAdapter;
 import com.example.benchsquatdl2.AdapterHolder.cardViewAdapter;
-import com.example.benchsquatdl2.CustomCalendarView;
 import com.example.benchsquatdl2.Events;
 import com.example.benchsquatdl2.MyGridAdapter;
 import com.example.benchsquatdl2.R;
@@ -85,23 +82,14 @@ import com.example.benchsquatdl2.dialogExtend;
 import com.example.benchsquatdl2.model.RepKgModel;
 import com.example.benchsquatdl2.model.commentModel;
 import com.example.benchsquatdl2.model.greenCardModel;
-import com.example.benchsquatdl2.model.modelApi.Trainingdate;
 import com.example.benchsquatdl2.model.modelApi.trainingdto;
-import com.example.benchsquatdl2.model.modelBench;
 import com.example.benchsquatdl2.model.modelApi.trainingsdaten;
-import com.example.benchsquatdl2.model.orderResponse;
 import com.example.benchsquatdl2.retrofit.UserApi;
 import com.example.benchsquatdl2.retrofit.RetrofitService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -119,6 +107,8 @@ public class benchFragment extends Fragment implements
     ImageButton NextButton,PreviousButton;
     TextView CurrentDate;
     MyGridAdapter myGridAdapter;
+
+    ImageView iv;
     GridView gridView;
     private static final int MAX_CALENDAR_DAYS = 42;
     Calendar calendar = Calendar.getInstance(Locale.ENGLISH);
@@ -175,49 +165,37 @@ public class benchFragment extends Fragment implements
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
 
-
-      
-
         // Inflate the layout for this fragment
         View vx = inflater.inflate(R.layout.activitycard_bench, container, false);
-        NextButton = vx.findViewById(R.id.nextBtn);
-        PreviousButton = vx.findViewById(R.id.previousBtn2);
+        NextButton = vx.findViewById(R.id.nextMonth);
+        PreviousButton = vx.findViewById(R.id.backMonth);
         CurrentDate = vx.findViewById(R.id.current_date);
         gridView = vx.findViewById(R.id.gridview);
 
 
-
         pgBar = vx.findViewById(R.id.progress_bar);
-        tv = vx.findViewById(R.id.text_view_progress);
+        iv = vx.findViewById(R.id.iv_benchpress);
 
-        linearLayout = vx.findViewById(R.id.lr);
+        linearLayout = vx.findViewById(R.id.calendarLinearLayout);
 
         SetUpCalendar();
 
 
+        PreviousButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                calendar.add(Calendar.MONTH, -1);
+                SetUpCalendar();
+            }
+        });
 
-
-
-
-
-        String childcard = "anzahlBench";
-        String childcardBench = "Best3BenchKg";
-        String childcardDate = "Date";
-
-        user = FirebaseAuth.getInstance().getCurrentUser();
-        reference = FirebaseDatabase.getInstance().getReference("metaDateUser");
-
-
-        user = FirebaseAuth.getInstance().getCurrentUser();
-        reference = FirebaseDatabase.getInstance().getReference("metaDateUser");
-        referenceTraininglogPrivate = FirebaseDatabase.getInstance().getReference("TraininglogPrivateBench");
-
-
-        referenceTraininglogPublic = FirebaseDatabase.getInstance().getReference("TraininglogPublic");
-       // userid = uid;
-
-        createCard();
-        buildRecyclerView();
+        NextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                calendar.add(Calendar.MONTH,1);
+                SetUpCalendar();
+            }
+        });
 
 
         buttonOpenDialog = vx.findViewById(R.id.btn_add_data_card_bench);
@@ -271,7 +249,7 @@ public class benchFragment extends Fragment implements
                     public void onResponse(Call<com.example.benchsquatdl2.model.modelApi.trainingsdaten> call, Response<com.example.benchsquatdl2.model.modelApi.trainingsdaten> response) {
 
                         try {
-                            if(response.body().getUb_bezeichnung().equals(bench)){
+
                                 date.setText(response.body().getDate());
                                 rep1.setText(response.body().getRep1());
                                 rep2.setText(response.body().getRep2());
@@ -285,8 +263,10 @@ public class benchFragment extends Fragment implements
                                 kg4.setText(response.body().getKg4());
                                 kg5.setText(response.body().getKg5());
 
+                                Log.d("gettheid","" + response.body().getId());
 
-                            }
+
+
 
                         }catch (Exception e){
 
@@ -429,6 +409,13 @@ public class benchFragment extends Fragment implements
                         l5_kg_five = vieww.findViewById(R.id.layer_five_et_kg_card_single_item_five);
 
                         //Kalendar für Aktion "save"
+
+
+
+
+
+
+
 
 
                         int code = keyEvent.getKeyCode();
@@ -983,7 +970,7 @@ public class benchFragment extends Fragment implements
 
                         }
 
-                        return true;
+                        return false;
                     }
                 };
 
@@ -1015,7 +1002,7 @@ public class benchFragment extends Fragment implements
                 save.add(0,mAdapter);
                 contactView.setAdapter(save.get(0));
                 mAdapter.setPlayPauseClickListener(benchFragment.this::imageButtonOnClick2);
-                String keyTraining = referenceTraininglogPublic.push().getKey();
+
 
 
 
@@ -1028,12 +1015,6 @@ public class benchFragment extends Fragment implements
                     @Override
                     public void onClick(View view) {
 
-                        String dummyTxt="dd";
-                        String date = format;
-
-
-
-
                         switch(save.size()){
 
                             case 1:
@@ -1043,22 +1024,18 @@ public class benchFragment extends Fragment implements
                                 String first_kg_string = first_kg.getText().toString().trim();
                                 String first_rep_string = first_rep.getText().toString().trim();
 
+
+
                                 if(!first_kg_string.isEmpty() && !first_rep_string.isEmpty()) {
-                                    modelBench bench = new modelBench(first_rep_string, first_kg_string, date, dummyTxt);
-                                    referenceTraininglogPublic.child(keyTraining).setValue(bench);
 
                                     trainingsdaten trainingsdaten = new trainingsdaten("bench",
-                                            date,first_rep_string,null,null,null,null,
+                                            format,first_rep_string,null,null,null,null,
                                             first_kg_string,null,null,null,null);
-
-
 
                                     userApi.savedata(trainingsdaten).enqueue(new Callback<com.example.benchsquatdl2.model.modelApi.trainingsdaten>() {
                                         @Override
                                         public void onResponse(Call<com.example.benchsquatdl2.model.modelApi.trainingsdaten> call, Response<com.example.benchsquatdl2.model.modelApi.trainingsdaten> response) {
-
-                                            Log.d("getTrain2","" + response.body());
-
+                                            refreshCalendar();
                                         }
 
                                         @Override
@@ -1069,18 +1046,9 @@ public class benchFragment extends Fragment implements
 
 
 
-
-
-
-
-
                                     progr++;
 
 
-
-
-                                    updateCard(progr);
-                                    buildRecyclerView();
 
                                     dialog.cancel();
                                     //RESET
@@ -1114,13 +1082,13 @@ public class benchFragment extends Fragment implements
                                         !second_rep_l2.isEmpty()) {
 
                                     trainingsdaten trainingsdaten = new trainingsdaten("bench",
-                                            date,first_rep_l2,second_rep_l2,null,null,null,
+                                            format,first_rep_l2,second_rep_l2,null,null,null,
                                             first_kg_l2,second_kg_l2,null,null,null);
 
                                     userApi.savedata(trainingsdaten).enqueue(new Callback<com.example.benchsquatdl2.model.modelApi.trainingsdaten>() {
                                         @Override
                                         public void onResponse(Call<com.example.benchsquatdl2.model.modelApi.trainingsdaten> call, Response<com.example.benchsquatdl2.model.modelApi.trainingsdaten> response) {
-
+                                           refreshCalendar();
                                         }
 
                                         @Override
@@ -1129,14 +1097,13 @@ public class benchFragment extends Fragment implements
                                         }
                                     });
 
-                                    modelBench bench2 = new modelBench(first_rep_l2, second_rep_l2, first_kg_l2, second_kg_l2, date, dummyTxt);
                                     progr++;
 
 
 
                                     updateProgressBar(progr);
-                                    updateCard(progr);
-                                    buildRecyclerView();
+
+
 
                                     dialog.cancel();
                                     //RESET
@@ -1174,18 +1141,17 @@ public class benchFragment extends Fragment implements
 
                                 if(!first_rep_l3.isEmpty() && !second_rep_l3.isEmpty() &&
                                         !third_rep_l3.isEmpty() && !first_kg_l3.isEmpty() && !second_kg_l3.isEmpty() && !third_kg_l3.isEmpty()){
-                                modelBench bench3 = new modelBench(first_rep_l3, second_rep_l3, third_rep_l3, first_kg_l3, second_kg_l3, third_kg_l3, date, dummyTxt);
 
                                 progr++;
 
                                     trainingsdaten trainingsdaten = new trainingsdaten("bench",
-                                            date,first_rep_l3,second_rep_l3,third_rep_l3,null,null,
+                                            format,first_rep_l3,second_rep_l3,third_rep_l3,null,null,
                                             first_kg_l3,second_kg_l3,third_kg_l3,null,null);
 
                                     userApi.savedata(trainingsdaten).enqueue(new Callback<com.example.benchsquatdl2.model.modelApi.trainingsdaten>() {
                                         @Override
                                         public void onResponse(Call<com.example.benchsquatdl2.model.modelApi.trainingsdaten> call, Response<com.example.benchsquatdl2.model.modelApi.trainingsdaten> response) {
-
+                                            refreshCalendar();
                                         }
 
                                         @Override
@@ -1195,8 +1161,7 @@ public class benchFragment extends Fragment implements
                                     });
 
                                     updateProgressBar(progr);
-                                    updateCard(progr);
-                                    buildRecyclerView();
+
                                     counterNew = 0;
 
                                     dialog.cancel();
@@ -1240,13 +1205,13 @@ public class benchFragment extends Fragment implements
                                 && !kg1_l4.isEmpty() && !kg2_l4.isEmpty() && !kg3_l4.isEmpty() && !kg4_l4.isEmpty()) {
 
                                     trainingsdaten trainingsdaten = new trainingsdaten("bench",
-                                            date,rp1_l4,rp2_l4,rp3_l4,rp4_l4,null,
+                                            format,rp1_l4,rp2_l4,rp3_l4,rp4_l4,null,
                                             kg1_l4,kg2_l4,kg3_l4,kg4_l4,null);
 
                                     userApi.savedata(trainingsdaten).enqueue(new Callback<com.example.benchsquatdl2.model.modelApi.trainingsdaten>() {
                                         @Override
                                         public void onResponse(Call<com.example.benchsquatdl2.model.modelApi.trainingsdaten> call, Response<com.example.benchsquatdl2.model.modelApi.trainingsdaten> response) {
-
+                                            refreshCalendar();
                                         }
 
                                         @Override
@@ -1255,15 +1220,13 @@ public class benchFragment extends Fragment implements
                                         }
                                     });
 
-                                    modelBench bench4 = new modelBench(rp1_l4, rp2_l4, rp3_l4, rp4_l4, kg1_l4, kg2_l4, kg3_l4, kg4_l4, date, dummyTxt);
 
                                     progr++;
 
 
 
                                     updateProgressBar(progr);
-                                    updateCard(progr);
-                                    buildRecyclerView();
+
 
                                     //counter = 0;
 
@@ -1315,13 +1278,13 @@ public class benchFragment extends Fragment implements
                                         !kg4_l5.isEmpty() && !kg5_l5.isEmpty()){
 
                                     trainingsdaten trainingsdaten = new trainingsdaten("bench",
-                                            date,rp1_l5,rp2_l5,rp3_l5,rp4_l5,rp5_l5,
+                                            format,rp1_l5,rp2_l5,rp3_l5,rp4_l5,rp5_l5,
                                             kg1_l5,kg2_l5,kg3_l5,kg4_l5,kg5_l5);
 
                                     userApi.savedata(trainingsdaten).enqueue(new Callback<com.example.benchsquatdl2.model.modelApi.trainingsdaten>() {
                                         @Override
                                         public void onResponse(Call<com.example.benchsquatdl2.model.modelApi.trainingsdaten> call, Response<com.example.benchsquatdl2.model.modelApi.trainingsdaten> response) {
-
+                                            refreshCalendar();
                                         }
 
                                         @Override
@@ -1330,14 +1293,11 @@ public class benchFragment extends Fragment implements
                                         }
                                     });
 
-                                modelBench bench5 = new modelBench(rp1_l5, rp2_l5, rp3_l5, rp4_l5, rp5_l5, kg1_l5, kg2_l5, kg3_l5, kg4_l5, kg5_l5, date, dummyTxt);
-
 
                                 progr++;
 
                                     updateProgressBar(progr);
-                                    updateCard(progr);
-                                    buildRecyclerView();
+
 
                                     //counter = 0;
 
@@ -1522,6 +1482,22 @@ public class benchFragment extends Fragment implements
         return vx;
     }
 
+    private void refreshCalendar(){
+        userApi.getDatabyID().enqueue(new Callback<List<trainingdto>>() {
+            @Override
+            public void onResponse(Call<List<trainingdto>> call, Response<List<trainingdto>> response) {
+                myGridAdapter = new MyGridAdapter(getActivity(),dates,calendar,eventsList,response.body());
+                gridView.setAdapter(myGridAdapter);
+                gridView.invalidateViews();
+
+            }
+            @Override
+            public void onFailure(Call<List<trainingdto>> call, Throwable t) {
+
+            }
+        });
+    }
+
     private void SetUpCalendar() {
         String currentDate = dateFormat.format(calendar.getTime());
         CurrentDate.setText(currentDate);
@@ -1552,6 +1528,7 @@ public class benchFragment extends Fragment implements
             public void onResponse(Call<List<trainingdto>> call, Response<List<trainingdto>> response) {
                 myGridAdapter = new MyGridAdapter(getActivity(),dates,calendar,eventsList,response.body());
                 gridView.setAdapter(myGridAdapter);
+
             }
             @Override
             public void onFailure(Call<List<trainingdto>> call, Throwable t) {
@@ -1575,6 +1552,10 @@ public class benchFragment extends Fragment implements
 
 
     private void buildRecyclerView() {
+
+
+
+
        /* mRecyclerView.setHasFixedSize(true);
         cardViewAdapter mAdapter = new cardViewAdapter(getActivity(), lstBook);
         mRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 10));
@@ -1582,20 +1563,7 @@ public class benchFragment extends Fragment implements
         mAdapter.setPlayPauseClickListener(this::imageButtonOnClick);*/
     }
 
-    private void updateCard(int z) {
-        int countstart = z;
-        int x = 0;
 
-        for (x = 0; x < 39; x++) {
-            lstBook.set(x, new greenCardModel(R.drawable.quadrat40));
-        }
-
-        for (x = 0; x < z; x++) {
-            lstBook.set(x, new greenCardModel(R.drawable.quadratgruen));
-        }
-
-
-    }
 
     public void imageButtonOnClick(View v, int position) {
         mAuth = FirebaseAuth.getInstance();
@@ -1689,51 +1657,6 @@ public class benchFragment extends Fragment implements
     }
 
     public void deleteLastItem(){
-        reference = FirebaseDatabase.getInstance().getReference("metaDateUser");
-        referenceTraininglogPrivate = FirebaseDatabase.getInstance().getReference("TraininglogPrivateBench");
-
-        mAuth = FirebaseAuth.getInstance();
-        String uid = mAuth.getUid().toString().trim();
-
-        DatabaseReference quotesRef = referenceTraininglogPrivate.child(uid);
-
-        if (progr > 0){
-            progr--;
-        }
-
-
-        quotesRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                String test = String.valueOf(snapshot.getChildrenCount());
-                mAuth = FirebaseAuth.getInstance();
-
-                String x = String.valueOf(snapshot.getChildrenCount());
-                int newC = Integer.parseInt(x);
-
-                DatabaseReference quotesRef = referenceTraininglogPrivate.child(uid).child(x);
-                quotesRef.removeValue();
-
-                if(newC > 0) {
-                    newC--;
-                    reference.child(uid).child("anzahlBench").setValue(newC);
-                    updateCard(Integer.parseInt(test));
-                    updateCard(newC);
-                    buildRecyclerView();
-                }
-                else{
-                    newC = 0;
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-
-
-
 
 
 
@@ -1755,68 +1678,11 @@ public class benchFragment extends Fragment implements
     }
 
 
-    private void createCard() {
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-        lstBook.add(new greenCardModel(R.drawable.quadrat40));
-
-
-
-
-        int arraySize = lstBook.size();
-
-
-    }
-
     private void updateProgressBar(int z) {
         int x = z;
         String zy = String.valueOf(z) + "%";
 
-        tv.setText(zy);
+       // tv.setText(zy);
     }
 
 

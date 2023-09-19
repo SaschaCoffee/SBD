@@ -1,8 +1,10 @@
 package com.example.benchsquatdl2.Fragment;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,7 +24,6 @@ public class FragmentMainActivity extends AppCompatActivity implements BottomNav
     BottomNavigationView bottomNavigationView;
     ArrayList<Integer> arrayList;
     private ItemViewModel model;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,6 +109,7 @@ public class FragmentMainActivity extends AppCompatActivity implements BottomNav
 
             case R.id.squad_card:
                 getSupportFragmentManager().beginTransaction().replace(R.id.container, firstFragment).commit();
+
                 return true;
 
             case R.id.bench_card:

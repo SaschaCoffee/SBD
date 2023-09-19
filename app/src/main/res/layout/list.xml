@@ -9,15 +9,19 @@ android:layout_height="match_parent"
 android:padding="4dp"
 tools:context=".compareYourselfActivity">
 
+
     <RelativeLayout
         android:id="@+id/relativeLayout2"
-        android:layout_width="409dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="25dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         tools:context=".compareYourselfActivity"
         tools:ignore="MissingConstraints"
-        tools:layout_editor_absoluteX="4dp"
-        tools:layout_editor_absoluteY="4dp">
+        tools:layout_editor_absoluteY="12dp">
 
         <TextView
             android:id="@+id/textView_country"
@@ -62,12 +66,25 @@ tools:context=".compareYourselfActivity">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/myContactList"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_marginTop="200dp"
+        android:layout_marginTop="215dp"
         android:paddingBottom="8dp"
-        app:layout_constraintTop_toBottomOf="@+id/relativeLayout2"
-        tools:layout_editor_absoluteX="4dp" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/omg" />
+
+    <ImageButton
+        android:id="@+id/omg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+
+        android:layout_marginEnd="20dp"
+        android:background="@color/grey_feed"
+        android:src="@drawable/more_vert"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/relativeLayout2" />
 
     <Button
         android:id="@+id/btnAdd"

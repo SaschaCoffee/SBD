@@ -30,7 +30,7 @@
             android:ems="10"
             android:focusable="true"
             android:hint="Repetitions "
-            android:inputType="textPersonName" />
+            android:inputType="numberSigned" />
 
         <EditText
             android:id="@+id/layer_two_et_kg_card_single_item"

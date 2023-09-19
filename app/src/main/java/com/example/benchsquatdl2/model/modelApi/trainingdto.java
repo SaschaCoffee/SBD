@@ -1,23 +1,18 @@
 package com.example.benchsquatdl2.model.modelApi;
 
 public class trainingdto {
+
+    Long id;
     String date, kg1, kg2,  kg3,  kg4,  kg5,
      rep1,  rep2,  rep3,  rep4,  rep5,
      ub_bezeichnung;
 
-    public trainingdto(String date, String kg1, String kg2, String kg3, String kg4, String kg5, String rep1, String rep2, String rep3, String rep4, String rep5, String ub_bezeichnung) {
-        this.date = date;
-        this.kg1 = kg1;
-        this.kg2 = kg2;
-        this.kg3 = kg3;
-        this.kg4 = kg4;
-        this.kg5 = kg5;
-        this.rep1 = rep1;
-        this.rep2 = rep2;
-        this.rep3 = rep3;
-        this.rep4 = rep4;
-        this.rep5 = rep5;
-        this.ub_bezeichnung = ub_bezeichnung;
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getDate() {
@@ -113,6 +108,21 @@ public class trainingdto {
     }
 
     public void setUb_bezeichnung(String ub_bezeichnung) {
+        this.ub_bezeichnung = ub_bezeichnung;
+    }
+
+    public trainingdto(String date, String kg1, String kg2, String kg3, String kg4, String kg5, String rep1, String rep2, String rep3, String rep4, String rep5, String ub_bezeichnung) {
+        this.date = date;
+        this.kg1 = kg1;
+        this.kg2 = kg2;
+        this.kg3 = kg3;
+        this.kg4 = kg4;
+        this.kg5 = kg5;
+        this.rep1 = rep1;
+        this.rep2 = rep2;
+        this.rep3 = rep3;
+        this.rep4 = rep4;
+        this.rep5 = rep5;
         this.ub_bezeichnung = ub_bezeichnung;
     }
 }

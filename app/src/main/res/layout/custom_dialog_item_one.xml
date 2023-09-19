@@ -23,6 +23,8 @@
                 android:layout_height="wrap_content"
                 app:srcCompat="@android:drawable/ic_menu_edit" />
 
+
+
             <EditText
                 android:id="@+id/layer_one_reps"
                 android:layout_width="wrap_content"
@@ -31,9 +33,13 @@
                 android:layout_marginEnd="10dp"
                 android:layout_toStartOf="@+id/layer_one_kg"
                 android:layout_toEndOf="@+id/layer_one_img"
-                android:ems="10"
-                android:hint="Repetitions"
-                 />
+
+                android:inputType="phone"
+                android:digits="0123456789"
+                tools:layout_editor_absoluteX="95dp"
+                tools:layout_editor_absoluteY="187dp"
+                android:hint="Reps"/>
+
 
             <EditText
                 android:id="@+id/layer_one_kg"
@@ -44,6 +50,8 @@
                 android:layout_toStartOf="@+id/layer_one_heavy"
                 android:ems="10"
                 android:hint="Kg/lb"
+                android:inputType="phone"
+                android:digits=".0123456789"
                 />
 
             <TextView
@@ -58,5 +66,7 @@
 
         </RelativeLayout>
     </androidx.cardview.widget.CardView>
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

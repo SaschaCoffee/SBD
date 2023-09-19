@@ -1,15 +1,13 @@
 package com.example.benchsquatdl2.retrofit;
 
+import com.example.benchsquatdl2.model.modelApi.Country.germancountry;
+import com.example.benchsquatdl2.model.modelApi.Country.countryname;
 import com.example.benchsquatdl2.model.modelApi.Trainingdate;
-import com.example.benchsquatdl2.model.modelApi.comment;
+import com.example.benchsquatdl2.model.modelApi.State.germanstate;
+import com.example.benchsquatdl2.model.modelApi.State.statename;
 import com.example.benchsquatdl2.model.modelApi.trainingdto;
 import com.example.benchsquatdl2.model.modelApi.trainingsdaten;
-import com.example.benchsquatdl2.model.modelApi.userModelApi;
-import com.example.benchsquatdl2.model.modelSpringBoot.Cart;
-import com.example.benchsquatdl2.model.modelSpringBoot.Customer;
-import com.example.benchsquatdl2.model.modelSpringBoot.OrderRequest;
-import com.example.benchsquatdl2.model.orderResponse;
-import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
+import com.example.benchsquatdl2.model.modelApi.lilWorldWide;
 
 import java.util.List;
 
@@ -27,15 +25,36 @@ public interface UserApi {
     @POST("/api/testemich")
     Call<trainingsdaten> testemich(@Body trainingsdaten trainingsdaten);
 
+    @POST("/api/deleterecord")
+    Call<trainingsdaten> deleteitem(@Body trainingsdaten trainingsdaten);
+
     @POST("/api/checkifexist")
     Call<trainingsdaten> checkData(@Body trainingsdaten trainingsdaten);
+
+    @POST("/api/sortdata")
+    Call<statename> sortData(@Body statename state);
+
+    @POST("/api/getDatabyIdandDate")
+    Call<Trainingdate> geTrainingDatabyId(@Body Trainingdate trainingdate);
+
+    @POST("/api/germanstate")
+    Call<List<germanstate>> getgermanstate(@Body statename state);
+
+    @POST("/api/sortgermanstate")
+    Call<List<germanstate>> getsortgermanstate(@Body statename state);
+
+
 
 
     @GET("/api/getAlltrainingData")
     Call<List<trainingdto>> geTrainingData();
 
-    @POST("/api/getDatabyIdandDate")
-    Call<Trainingdate> geTrainingDatabyId(@Body Trainingdate trainingdate);
+    @GET("/api/getgermancountry")
+    Call<List<germancountry>> getgermancountry();
+
+
+    @GET("/api/world")
+    Call<List<lilWorldWide>> getWorldData();
 
     @GET("/api/getDatabyId")
     Call<List<trainingdto>> getDatabyID();

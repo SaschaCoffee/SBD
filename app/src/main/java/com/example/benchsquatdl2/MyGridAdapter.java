@@ -106,13 +106,21 @@ public class MyGridAdapter extends ArrayAdapter {
 
         for(int i = 0; i < startsize; i++) {
 
+            TextView peace =view.findViewById(R.id.calendar_day);
 
             if (xtest.get(i).equals(format)) {
-                Log.d("equalTest","" + xtest.get(i) + "  " + format);
-                //view.setBackgroundColor(getContext().getResources().getColor(R.color.green));
-
-                TextView peace =view.findViewById(R.id.calendar_day);
                 peace.setBackgroundDrawable(getContext().getResources().getDrawable(R.drawable.backgreen));
+                switch(body.get(i).getUb_bezeichnung()){
+                    case "bench":
+                        peace.setText("B");
+                        break;
+                    case "deadlift":
+                        peace.setText("D");
+                        break;
+                    case "squat":
+                        peace.setText("S");
+                        break;
+                }
 
             }
 

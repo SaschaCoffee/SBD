@@ -1,7 +1,17 @@
 package com.example.benchsquatdl2.model.modelApi;
 
 public class trainingsdaten {
+
+    private Long id;
     private String ub_bezeichnung, date, rep1, rep2, rep3, rep4, rep5, kg1, kg2, kg3, kg4, kg5;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getUb_bezeichnung() {
         return ub_bezeichnung;

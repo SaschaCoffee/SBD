@@ -22,7 +22,7 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/countryList"
+                android:id="@+id/cityorstate"
                 android:layout_width="220dp"
                 android:layout_height="wrap_content"
                 android:layout_below="@+id/contactName"
@@ -33,14 +33,14 @@
                 android:id="@+id/tv_squat"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/countryList"
+                android:layout_below="@+id/cityorstate"
                 android:text="TextView" />
 
             <TextView
                 android:id="@+id/tv_bench"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/countryList"
+                android:layout_below="@+id/cityorstate"
                 android:layout_marginStart="31dp"
                 android:layout_toEndOf="@+id/tv_squat"
                 android:text="TextView" />
@@ -49,7 +49,7 @@
                 android:id="@+id/tv_deadlift"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/countryList"
+                android:layout_below="@+id/cityorstate"
                 android:layout_marginStart="31dp"
                 android:layout_toEndOf="@+id/tv_bench"
                 android:text="TextView" />

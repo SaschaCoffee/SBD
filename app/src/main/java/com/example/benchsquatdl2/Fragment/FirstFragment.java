@@ -4,11 +4,16 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -18,9 +23,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 
-import com.example.benchsquatdl2.AdapterHolder.listAllProfilesAdapter;
+import com.example.benchsquatdl2.AdapterHolder.listAllProfilesAdapterCountry;
+import com.example.benchsquatdl2.AdapterHolder.listAllProfilesAdapterState;
 import com.example.benchsquatdl2.R;
-import com.example.benchsquatdl2.AdapterHolder.listAllProfilesAdapterCity;
+import com.example.benchsquatdl2.model.modelApi.Country.countryname;
+import com.example.benchsquatdl2.model.modelApi.Country.germancountry;
+import com.example.benchsquatdl2.model.modelApi.State.germanstate;
+import com.example.benchsquatdl2.model.modelApi.State.statename;
+import com.example.benchsquatdl2.model.modelApi.menuitemid;
+import com.example.benchsquatdl2.retrofit.RetrofitService;
+import com.example.benchsquatdl2.retrofit.UserApi;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -30,6 +42,12 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 
 public class FirstFragment extends Fragment  {
     public static final String COLUMN_ID = "ID";
@@ -37,18 +55,20 @@ public class FirstFragment extends Fragment  {
     public static final String COLUMN_CUSTOMER_NAME = "CUSTOMER_NAME";
     public static final String COLUMN_CUSTOMER_AGE = "CUSTOMER_AGE";
 
+    Menu optionsMenu;
+
     private String selectedCountry,  selectedState;                 //vars to hold the values of selected State and District
     private TextView tvCountrySpinner, tvStateSpinner;             //declaring TextView to show the errors
     private Spinner countrySpinner, stateSpinner;                  //Spinners
     private ArrayAdapter<CharSequence> countryAdapter, stateAdapter;  //declare adapters for the spinners
-
-
 
     SQLiteDatabase db;
     RecyclerView contactView;
     DatabaseReference statistic, statisticUSA;
     Button sbd, add, btn_logregister, btn_sort;
     TextView tv_banner;
+    RetrofitService retrofitService = new RetrofitService();
+    UserApi userApi = retrofitService.getRetrofit().create(UserApi.class);
     public FirstFragment(){
         // require a empty public constructor
     }
@@ -56,6 +76,10 @@ public class FirstFragment extends Fragment  {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+
+        String land;
+
+
         View vx = inflater.inflate(R.layout.list, container, false);
         statistic = FirebaseDatabase.getInstance().getReference();
         statisticUSA = FirebaseDatabase.getInstance().getReference();
@@ -63,11 +87,58 @@ public class FirstFragment extends Fragment  {
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
         contactView.setLayoutManager(linearLayoutManager);
         contactView.setHasFixedSize(true);
-
         btn_sort = vx.findViewById(R.id.btn_sort);
+
+        ImageButton ib = vx.findViewById(R.id.omg);
+        PopupMenu dropDownMenu = new PopupMenu(getContext(), ib);
+
+
+
+
+        ib.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                PopupMenu popup = new PopupMenu(getContext(), view);
+                MenuInflater inflater = popup.getMenuInflater();
+                inflater.inflate(R.menu.menu_list, popup.getMenu());
+                popup.show();
+
+                popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem menuItem) {
+                        Integer menuitem = menuItem.getItemId();
+
+
+
+
+
+                        if(!selectedState.isEmpty()) {
+                            buildRecyclerviewSortingState(menuitem, selectedCountry, umwandelnString(selectedState));
+
+                        }
+                        else {
+                            buildRecyclerviewSortingCountry(menuitem, selectedCountry);
+                        }
+
+
+
+                        return false;
+                    }
+                });
+            }
+
+        });
+
+
+
+
+
+
+
 
         Query statisticNi = statistic.child("statisticDataGermany2");
         Query statisticUSAA = statisticUSA.child("statisticUSA");
+
 
 
         //Country Spinner Initialisation
@@ -82,6 +153,8 @@ public class FirstFragment extends Fragment  {
         countryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
         countrySpinner.setAdapter(countryAdapter);            //Set the adapter to the spinner to populate the Country Spinner
+
+
 
         ArrayList<String> bundeslaender = new ArrayList<String>();
         bundeslaender.add("BB");
@@ -99,151 +172,10 @@ public class FirstFragment extends Fragment  {
         bundeslaender.add("ST");
         bundeslaender.add("TH");
 
-
-        btn_sort.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                selectedState = stateSpinner.getSelectedItem().toString();
-                selectedCountry = countrySpinner.getSelectedItem().toString();
+        String niedersachsen = "NI";
 
 
 
-                if(selectedCountry.equals("Worldwide")){
-                    statistic.child("statisticTotalWorldwide").limitToFirst(400).addValueEventListener(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-
-                            ArrayList<String> benchList = new ArrayList<>();
-                            ArrayList<String> squatList = new ArrayList<>();
-                            ArrayList<String> deadliftList = new ArrayList<>();
-                            ArrayList<String> nameList = new ArrayList<>();
-                            ArrayList<String> cityList = new ArrayList<>();
-
-                            for(DataSnapshot xx : snapshot.getChildren()){
-                                for(DataSnapshot xy : xx.getChildren()) {
-                                    String test = xy.child("Name").getValue(String.class);
-
-
-                                    String bench = String.valueOf(xy.child("Best3BenchKg").getValue(Double.class));
-                                    String deadlift = String.valueOf(xy.child("Best3DeadliftKg").getValue(Double.class));
-                                    String squat = String.valueOf(xy.child("Best3SquatKg").getValue(Double.class));
-                                    String name = String.valueOf(xy.child("Name").getValue(String.class));
-                                    String city = String.valueOf(xy.child("MeetCountry").getValue(String.class));
-                                    benchList.add(bench);
-                                    deadliftList.add(deadlift);
-                                    squatList.add(squat);
-                                    nameList.add(name);
-                                    cityList.add(city);
-                                }
-
-                            }
-                            buildRecyclerviewDE(benchList, squatList, deadliftList, nameList, cityList);
-
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {
-
-                        }
-                    });
-
-
-
-                }
-
-                if(selectedCountry.equals("Germany")){
-                    statistic.child("statisticTotalGermany").addValueEventListener(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-
-                            ArrayList<String> benchList = new ArrayList<>();
-                            ArrayList<String> squatList = new ArrayList<>();
-                            ArrayList<String> deadliftList = new ArrayList<>();
-                            ArrayList<String> nameList = new ArrayList<>();
-                            ArrayList<String> cityList = new ArrayList<>();
-
-                            for(DataSnapshot xx : snapshot.getChildren()){
-                                for(DataSnapshot xy : xx.getChildren()) {
-                                    String test = xy.child("Name").getValue(String.class);
-
-
-                                    String bench = String.valueOf(xy.child("Best3BenchKg").getValue(Double.class));
-                                    String deadlift = String.valueOf(xy.child("Best3DeadliftKg").getValue(Double.class));
-                                    String squat = String.valueOf(xy.child("Best3SquatKg").getValue(Double.class));
-                                    String name = String.valueOf(xy.child("Name").getValue(String.class));
-                                    String city = String.valueOf(xy.child("MeetCountry").getValue(String.class));
-                                    benchList.add(bench);
-                                    deadliftList.add(deadlift);
-                                    squatList.add(squat);
-                                    nameList.add(name);
-                                    cityList.add(city);
-                                }
-
-                            }
-                            buildRecyclerviewDE(benchList, squatList, deadliftList, nameList, cityList);
-
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {
-
-                        }
-                    });
-                }
-
-
-                for (String bundesland : bundeslaender) {
-                    System.out.println(bundesland);
-                    if (bundesland.equals(selectedState)) {
-
-                        switch(selectedState){
-                            case "Niedersachsen":
-                                statistic.child("statisticTEEST7").child("NI").child("total").addValueEventListener(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-
-                                        ArrayList<String> benchList = new ArrayList<>();
-                                        ArrayList<String> squatList = new ArrayList<>();
-                                        ArrayList<String> deadliftList = new ArrayList<>();
-                                        ArrayList<String> nameList = new ArrayList<>();
-                                        ArrayList<String> cityList = new ArrayList<>();
-
-                                        for(DataSnapshot xx : snapshot.getChildren()){
-                                            for(DataSnapshot xy : xx.getChildren()) {
-                                                String test = xy.child("Name").getValue(String.class);
-
-
-                                                String bench = String.valueOf(xy.child("Best3BenchKg").getValue(Double.class));
-                                                String deadlift = String.valueOf(xy.child("Best3DeadliftKg").getValue(Double.class));
-                                                String squat = String.valueOf(xy.child("Best3SquatKg").getValue(Double.class));
-                                                String name = String.valueOf(xy.child("Name").getValue(String.class));
-                                                String city = String.valueOf(xy.child("MeetTown").getValue(String.class));
-                                                benchList.add(bench);
-                                                deadliftList.add(deadlift);
-                                                squatList.add(squat);
-                                                nameList.add(name);
-                                                cityList.add(city);
-                                            }
-
-                                        }
-                                        buildRecyclerviewDEcity(benchList, squatList, deadliftList, nameList, cityList);
-
-                                    }
-
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError error) {
-
-                                    }
-                                });
-                            break;
-
-
-                        }
-                    }
-                }
-
-            }
-        });
         countrySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -263,85 +195,18 @@ public class FirstFragment extends Fragment  {
                             break;
                         case "Germany": stateAdapter = ArrayAdapter.createFromResource(parent.getContext(),
                                 R.array.array_german_states, R.layout.spinner_layout);
-                            statistic.child("statisticDataGermany2").addValueEventListener(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot snapshot) {
 
-                                    ArrayList<String> benchList = new ArrayList<>();
-                                    ArrayList<String> squatList = new ArrayList<>();
-                                    ArrayList<String> deadliftList = new ArrayList<>();
-                                    ArrayList<String> nameList = new ArrayList<>();
-                                    HashMap<String, Double> totalListe = new HashMap<>();
-                                    ArrayList<String> cityList = new ArrayList<>();
+                        userApi.getgermancountry().enqueue(new Callback<List<germancountry>>() {
+                            @Override
+                            public void onResponse(Call<List<germancountry>> call, Response<List<germancountry>> response) {
+                                buildRecyclerviewCountry(response.body());
+                            }
 
-                                   Long dd = snapshot.child("NI").child("aaronbenbacha").getChildrenCount();
+                            @Override
+                            public void onFailure(Call<List<germancountry>> call, Throwable t) {
 
-
-
-                                    // First For Looop, die ganzen Bundeslaender
-                              for (DataSnapshot y : snapshot.getChildren()) {
-                                  int size22 = Integer.parseInt(String.valueOf(y.getChildrenCount()));
-                                  String size23 = String.valueOf(size22 -1);
-                                  long c = y.getChildrenCount();
-
-
-
-
-
-
-                                        //Second Loop, die User
-                                       for (DataSnapshot yx : y.getChildren()) {
-
-                                            int size = Integer.parseInt(String.valueOf(yx.getChildrenCount()));
-                                            String size2 = String.valueOf(size -1);
-                                            long cc = yx.getChildrenCount();
-
-
-
-                                            /* FIRE BASE ORDNER STRUKTUR
-
-                                            0 Name, 1 Sex, 2 Event, 3 Equipment, 4 Age, 5 AgeClass, 6 BirthYearClass, 7 Division, 8 BodyweightKg, 9 WeightClassKg,
-                                            10 Squat1Kg, 11 Squat2Kg, 12 Squat3Kg, 13 Squat4Kg, 14 Best3SquatKg, 15 Bench1Kg, 16 Bench2Kg,
-                                            17 Bench3Kg, 18 Bench4Kg, 19 Best3BenchKg, 20 Deadlift1Kg, 21 Deadlift2Kg, 22 Deadlift3Kg,
-                                            23 Deadlift4Kg, 24 Best3DeadliftKg, 25 TotalKg, 26 Place, 27 Dots, 28 Wilks, 29 Glossbrenner,
-                                            30 Goodlift, 31 Tested, 32 Country, 33 State, 34 Federation, 35 ParentFederation, 36 Date,
-                                            37 MeetCountry, 38 MeetState, 39 MeetTown, 40 MeetName.*/
-
-                                            //Objects with various kind of numbers 0,1,2,3
-
-                                                String xy = "";
-
-
-                                               String bench = String.valueOf(yx.child(size2).child("19").getValue(Double.class));
-                                               String deadlift = String.valueOf(yx.child(size2).child("24").getValue(Double.class));
-                                               String squat = String.valueOf(yx.child(size2).child("14").getValue(Double.class));
-                                               String name = String.valueOf(yx.child(size2).child("0").getValue(String.class));
-                                               String city = String.valueOf(yx.child(size2).child("38").getValue(String.class));
-
-
-                                               benchList.add(bench);
-                                               deadliftList.add(deadlift);
-                                               squatList.add(squat);
-                                               nameList.add(name);
-                                               cityList.add(city);
-
-
-
-
-
-                                       }
-
-
-                                 }
-                                    buildRecyclerviewDE(benchList, squatList, deadliftList, nameList, cityList);
-                                }
-
-
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError error) {
-
-                                }
-                            });
+                            }
+                        });
 
                             break;
 
@@ -408,7 +273,7 @@ public class FirstFragment extends Fragment  {
 
 
 
-                                        buildRecyclerviewDE(benchList, squatList, deadliftList, nameList, cityList);
+
                                     }
 
                                     @Override
@@ -496,7 +361,6 @@ public class FirstFragment extends Fragment  {
                                         }
 
                                     }
-                                    buildRecyclerview(benchList,squatList,deadliftList,nameList,cityList);
 
                                     //    modelDoubleList hMap = x.child("Best3BenchKg").getValue(t);
                                     //
@@ -548,70 +412,11 @@ public class FirstFragment extends Fragment  {
                                         stateAdapter = ArrayAdapter.createFromResource(parent.getContext(),
                                                 R.array.array_default_state, R.layout.spinner_layout);
                                         break;
-                                    case "Niedersachsen":
+                                    case "Niedersachsen (NI)":
                                         stateAdapter = ArrayAdapter.createFromResource(parent.getContext(),
                                                 R.array.array_german_states, R.layout.spinner_layout);
 
-                                        statistic.child("statisticDataGermany2").child("NI").addValueEventListener(new ValueEventListener() {
-                                            @Override
-                                            public void onDataChange(@NonNull DataSnapshot snapshot) {
-
-                                                ArrayList<String> benchList = new ArrayList<>();
-                                                ArrayList<String> squatList = new ArrayList<>();
-                                                ArrayList<String> deadliftList = new ArrayList<>();
-                                                ArrayList<String> nameList = new ArrayList<>();
-                                                ArrayList<String> cityList = new ArrayList<>();
-
-                                                for (DataSnapshot yx : snapshot.getChildren()) {
-
-                                                    int size = Integer.parseInt(String.valueOf(yx.getChildrenCount()));
-                                                    String size2 = String.valueOf(size -1);
-                                                    long cc = yx.getChildrenCount();
-
-
-                                            /* FIRE BASE ORDNER STRUKTUR
-
-                                            0 Name, 1 Sex, 2 Event, 3 Equipment, 4 Age, 5 AgeClass, 6 BirthYearClass, 7 Division, 8 BodyweightKg, 9 WeightClassKg,
-                                            10 Squat1Kg, 11 Squat2Kg, 12 Squat3Kg, 13 Squat4Kg, 14 Best3SquatKg, 15 Bench1Kg, 16 Bench2Kg,
-                                            17 Bench3Kg, 18 Bench4Kg, 19 Best3BenchKg, 20 Deadlift1Kg, 21 Deadlift2Kg, 22 Deadlift3Kg,
-                                            23 Deadlift4Kg, 24 Best3DeadliftKg, 25 TotalKg, 26 Place, 27 Dots, 28 Wilks, 29 Glossbrenner,
-                                            30 Goodlift, 31 Tested, 32 Country, 33 State, 34 Federation, 35 ParentFederation, 36 Date,
-                                            37 MeetCountry, 38 MeetState, 39 MeetTown, 40 MeetName.*/
-
-                                                    //Objects with various kind of numbers 0,1,2,3
-
-                                                    String xy = "";
-
-                                                    //Size2, weil NI/User/0,1,2 (Ordner 2 die Stärksten werte)
-
-
-                                                    String bench = String.valueOf(yx.child(size2).child("19").getValue(Double.class));
-                                                    String deadlift = String.valueOf(yx.child(size2).child("24").getValue(Double.class));
-                                                    String squat = String.valueOf(yx.child(size2).child("14").getValue(Double.class));
-                                                    String name = String.valueOf(yx.child(size2).child("0").getValue(String.class));
-                                                    String city = String.valueOf(yx.child(size2).child("39").getValue(String.class));
-
-
-                                                    benchList.add(bench);
-                                                    deadliftList.add(deadlift);
-                                                    squatList.add(squat);
-                                                    nameList.add(name);
-                                                    cityList.add(city);
-
-
-
-                                                }
-
-                                                buildRecyclerviewDEcity(benchList, squatList, deadliftList, nameList, cityList);
-                                            }
-
-                                            @Override
-                                            public void onCancelled(@NonNull DatabaseError error) {
-
-                                            }
-                                        });
-
-
+                                        buildRecyclerviewState("NI");
 
                                         break;
 
@@ -758,7 +563,7 @@ public class FirstFragment extends Fragment  {
                     }
 
                 }
-                buildRecyclerview(benchList,squatList,deadliftList,nameList,cityList);
+
 
                 //    modelDoubleList hMap = x.child("Best3BenchKg").getValue(t);
                 //
@@ -781,21 +586,101 @@ public class FirstFragment extends Fragment  {
         });
 
         return vx;
+
+
     }
 
-    private void buildRecyclerviewDEcity(ArrayList<String> benchList, ArrayList<String> squatList, ArrayList<String> deadliftList, ArrayList<String> nameList, ArrayList<String> cityList) {
-        listAllProfilesAdapterCity profilesAdapter2 = new listAllProfilesAdapterCity(benchList,squatList,deadliftList, nameList, cityList);
-        contactView.setAdapter(profilesAdapter2);
+    private void buildRecyclerviewSortingCountry(Integer menuitem, String selectedCountry) {
+
+
+
     }
 
-    private void buildRecyclerviewDE(ArrayList<String> benchList, ArrayList<String> squatList, ArrayList<String> deadliftList, ArrayList<String> nameList, ArrayList<String> cityList) {
-        listAllProfilesAdapter profilesAdapter = new listAllProfilesAdapter(benchList,squatList,deadliftList, nameList, cityList);
-        contactView.setAdapter(profilesAdapter);
+    private void buildRecyclerviewSortingState(Integer menuitem, String selectedCountry, String selectedState) {
+        statename sortmodel = new statename(selectedState);
+
+        Log.d("menuID2",menuitem + selectedCountry);
+
+
+        //SelecttedState als var einfügen, aber aufpassen. Es ist die lange schreibweise
+        //z.b. Niedersachsen anstatt NI
+        //UPDATE: umwandeln methode hinzugefügt. Ändert string "Niedersachsen (NI)" zu NI um
+        statename statename = new statename(selectedState);
+
+        switch(menuitem){
+           case R.id.dsc:
+               switch(selectedCountry){
+                   case "Germany":
+                       userApi.getsortgermanstate(statename).enqueue(new Callback<List<germanstate>>() {
+                           @Override
+                           public void onResponse(Call<List<germanstate>> call, Response<List<germanstate>> response) {
+                               listAllProfilesAdapterState profilesAdapter = new listAllProfilesAdapterState(response, getContext());
+                               contactView.setAdapter(profilesAdapter);
+                           }
+
+                           @Override
+                           public void onFailure(Call<List<germanstate>> call, Throwable t) {
+
+                           }
+                       });
+               }
+
+        }
+
+
     }
 
-    private void buildRecyclerview(ArrayList<String> benchList, ArrayList<String> squatList, ArrayList<String> deadliftList, ArrayList<String> nameList, ArrayList<String> cityList) {
-        listAllProfilesAdapter profilesAdapter = new listAllProfilesAdapter(benchList,squatList,deadliftList, nameList, cityList);
-        contactView.setAdapter(profilesAdapter);
+
+    private void buildRecyclerviewCountry(List<germancountry> body) {
+
+        listAllProfilesAdapterCountry profilesAdapterCountry = new listAllProfilesAdapterCountry(body, getContext());
+        contactView.setAdapter(profilesAdapterCountry);
+
+    }
+
+    private void buildRecyclerviewSortingGermanStates(String selectedCountry) {
+
+    }
+
+    private void buildRecyclerviewState(String state) {
+
+        statename xx = new statename(state);
+
+        userApi.getgermanstate(xx).enqueue(new Callback<List<germanstate>>() {
+            @Override
+            public void onResponse(Call<List<germanstate>> call, Response<List<germanstate>> response) {
+
+                listAllProfilesAdapterState profilesAdapter = new listAllProfilesAdapterState(response, getContext());
+                contactView.setAdapter(profilesAdapter);
+
+            }
+
+            @Override
+            public void onFailure(Call<List<germanstate>> call, Throwable t) {
+
+            }
+        });
+
+
+
+
+    }
+
+    private void buildRecyclerviewSortingGermanState() {
+
+
+
+    }
+
+    public static String umwandelnString(String input) {
+        int start = input.indexOf("(");
+        int end = input.indexOf(")");
+
+        if (start != -1 && end != -1 && start < end) {
+            return input.substring(start + 1, end);
+        } else {
+            return input; // Wenn keine Klammern gefunden wurden, gebe den Originalstring zurück
+        }
     }
 
 
