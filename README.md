@@ -6,8 +6,6 @@
  <p>
 
 
-The app will be completed in 3-4 months, and useful features such as user search and analysis of strength data will be added.
-A detailed guide will follow.
 
 
 
